@@ -1,7 +1,10 @@
 [package]
 name = "trusted-proxies"
+description = "A rust crate to extract http request information behind trusted proxies"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/redirectionio/trusted-proxies"
 
 [features]
 default = ["http"]
