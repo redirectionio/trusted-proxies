@@ -16,7 +16,7 @@ fn main() {
 
     // 192.168.0.1 is the client ip address, which should be extracted from the connection.
     // It is trusted by default as it is a private ip address.
-    let trusted = Trusted::extract("192.168.0.1".parse().unwrap(), &config, &request);
+    let trusted = Trusted::extract("192.168.0.1".parse().unwrap(), &request, &config);
     
     assert_eq!(trusted.ip(), "1.1.1.1".parse().unwrap());
     assert_eq!(trusted.host(), "example.com");
