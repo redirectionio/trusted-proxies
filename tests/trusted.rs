@@ -30,7 +30,11 @@ struct Expected {
 }
 
 #[rstest]
-fn fixture(#[files("tests/**/*.test")] path: PathBuf) {
+fn fixture(
+    #[files("**/*.test")]
+    #[base_dir = "tests/fixtures"]
+    path: PathBuf,
+) {
     let content = std::fs::read_to_string(&path).unwrap();
     let split = content
         .split("-----------------------\n")

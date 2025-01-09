@@ -528,34 +528,6 @@ mod tests {
     }
 
     #[test]
-    fn forwarded_weird_whitespace() {
-        let mut request = Request::get("/").body(()).unwrap();
-        request.headers_mut().append(
-            header::HeaderName::from_static("forwarded"),
-            "for= 1.2.3.4; proto= https".parse().unwrap(),
-        );
-
-        let config = Config::default();
-
-        // 192.168.2.60 is a local ip address, so it should be trusted by default
-        let trusted = Trusted::from("127.0.0.1".parse().unwrap(), &request, &config);
-        assert_eq!(trusted.ip(), "1.2.3.4".parse::<IpAddr>().unwrap());
-        assert_eq!(trusted.scheme(), Some("https"));
-
-        let mut request = Request::get("/").body(()).unwrap();
-        request.headers_mut().append(
-            header::HeaderName::from_static("forwarded"),
-            "  for = 1.2.3.4  ".parse().unwrap(),
-        );
-
-        let config = Config::default();
-
-        // 192.168.2.60 is a local ip address, so it should be trusted by default
-        let trusted = Trusted::from("127.0.0.1".parse().unwrap(), &request, &config);
-        assert_eq!(trusted.ip(), "1.2.3.4".parse::<IpAddr>().unwrap());
-    }
-
-    #[test]
     fn forwarded_for_quoted() {
         let mut request = Request::get("/").body(()).unwrap();
         request.headers_mut().append(
