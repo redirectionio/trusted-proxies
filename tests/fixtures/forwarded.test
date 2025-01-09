@@ -1,0 +1,13 @@
+127.0.0.1
+-----------------------
+GET /index.html HTTP/1.1
+Forwarded: for="1.1.1.1";proto=http;host=test.domain,for="192.168.10.0";proto=https;host=yolo.domain
+
+-----------------------
+{}
+-----------------------
+{
+    "host": "test.domain",
+    "ip": "1.1.1.1",
+    "scheme": "http"
+}
