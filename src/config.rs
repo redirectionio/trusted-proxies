@@ -10,7 +10,7 @@ use ipnet::{AddrParseError, IpNet};
 ///   - IPV6 Loopback
 ///   - IPV6 Private Networks
 ///
-/// It also trusts the `FORWARDED` and `X-Forwarded-For' header by default.
+/// It also trusts the `Forwarded` and `X-Forwarded-For` header by default.
 ///
 /// # Example
 /// ```
@@ -105,22 +105,57 @@ impl Config {
         false
     }
 
+    /// Trust the `Forwarded` header
     pub fn trust_forwarded(&mut self) {
         self.is_forwarded_trusted = true;
     }
 
+    /// Trust the `X-Forwarded-For` header
     pub fn trust_x_forwarded_for(&mut self) {
         self.is_x_forwarded_for_trusted = true;
     }
 
+    /// Trust the `X-Forwarded-Host` header to fetch the host and optionally the port
+    ///
+    /// It is not recommended to trust this header as it can be easily spoofed, however you can trust
+    /// it if you are behind a reverse proxy that **always** sets this header.
+    ///
+    /// If there is multiple values in the header, the last one is used, even if there is multiple
+    /// proxies in the chain.
+    ///
+    /// If you need to get the original value with multiple proxies in the chain, you can use the
+    /// `Forwarded` header that allows to do that in a secure way.
+    /// See [RFC7239](https://tools.ietf.org/html/rfc7239) for more information.
     pub fn trust_x_forwarded_host(&mut self) {
         self.is_x_forwarded_host_trusted = true;
     }
 
+    /// Trust the `X-Forwarded-Proto` header to fetch the scheme
+    ///
+    /// It is not recommended to trust this header as it can be easily spoofed, however you can trust
+    /// it if you are behind a reverse proxy that **always** sets this header.
+    ///
+    /// If there is multiple values in the header, the last one is used, even if there is multiple
+    /// proxies in the chain.
+    ///
+    /// If you need to get the original value with multiple proxies in the chain, you can use the
+    /// `Forwarded` header that allows to do that in a secure way.
+    /// See [RFC7239](https://tools.ietf.org/html/rfc7239) for more information.
     pub fn trust_x_forwarded_proto(&mut self) {
         self.is_x_forwarded_proto_trusted = true;
     }
 
+    /// Trust the `X-Forwarded-By` header to identify the proxy that sent the request
+    ///
+    /// It is not recommended to trust this header as it can be easily spoofed, however you can trust
+    /// it if you are behind a reverse proxy that **always** sets this header.
+    ///
+    /// If there is multiple values in the header, the last one is used, even if there is multiple
+    /// proxies in the chain.
+    ///
+    /// If you need to get the original value with multiple proxies in the chain, you can use the
+    /// `Forwarded` header that allows to do that in a secure way.
+    /// See [RFC7239](https://tools.ietf.org/html/rfc7239) for more information.
     pub fn trust_x_forwarded_by(&mut self) {
         self.is_x_forwarded_by_trusted = true;
     }

@@ -2,6 +2,28 @@ use crate::extract::RequestInformation;
 use crate::Config;
 use core::net::IpAddr;
 
+/// Trusted data extracted from a request
+///
+/// Values returned by this struct are trusted and can be used to determine the real client information,
+/// given your configuration.
+///
+/// # Example
+/// ```
+/// use trusted_proxies::{Config, Trusted};
+///
+/// let config = Config::new_local();
+/// let mut request = http::Request::get("/").body(()).unwrap();
+/// request.headers_mut().insert(http::header::FORWARDED, "for=1.2.3.4; proto=https; by=myproxy; host=mydomain.com:8080".parse().unwrap());
+/// let socket_ip_addr = core::net::IpAddr::from([127, 0, 0, 1]);
+///
+/// let trusted = Trusted::from(socket_ip_addr, &request, &config);
+///
+/// assert_eq!(trusted.scheme(), Some("https"));
+/// assert_eq!(trusted.host(), Some("mydomain.com"));
+/// assert_eq!(trusted.port(), Some(8080));
+/// assert_eq!(trusted.ip(), core::net::IpAddr::from([1, 2, 3, 4]));
+/// ```
+#[derive(Debug, Clone)]
 pub struct Trusted<'a> {
     pub host: Option<&'a str>,
     pub scheme: Option<&'a str>,
@@ -29,18 +51,22 @@ fn bare_address(val: &str) -> &str {
 }
 
 impl<'a> Trusted<'a> {
+    /// Get the scheme of the request
     pub fn scheme(&self) -> Option<&str> {
         self.scheme
     }
 
+    /// Get the host and potential port of the request
     pub fn host_with_port(&self) -> Option<&str> {
         self.host
     }
 
+    /// Get the host of the request (without port)
     pub fn host(&self) -> Option<&str> {
         self.host.and_then(|host| host.split(':').next())
     }
 
+    /// Get the port of the request
     pub fn port(&self) -> Option<u16> {
         self.host.and_then(|host| {
             host.split(':')
@@ -49,14 +75,17 @@ impl<'a> Trusted<'a> {
         })
     }
 
+    /// Get the proxy that forwarded the request
     pub fn by(&self) -> Option<&str> {
         self.by
     }
 
+    /// Get first untrusted IP address from the request, which should be in most cases the real client IP address
     pub fn ip(&self) -> IpAddr {
         self.ip
     }
 
+    /// Create a new `Trusted` struct from a peer address, a request and a configuration
     pub fn from<T: RequestInformation>(ip_addr: IpAddr, request: &'a T, config: &Config) -> Self {
         let (trusted_host, trusted_scheme, trusted_by, trusted_ip) =
             if !config.is_ip_trusted(&ip_addr) {

@@ -9,19 +9,17 @@ use trusted_proxies::{Config, Trusted};
 use http::Request;
 
 fn main() {
-    // By default it will trust Forwarded and X-Forwarded-For headers with private ip addresses.
-    let config = Config::default();
-    let request = Request::get("http://example.com:8080")
-        .header("X-Forwarded-For", "1.1.1.1");
+    let config = Config::new_local();
+    let mut request = http::Request::get("/").body(()).unwrap();
+    request.headers_mut().insert(http::header::FORWARDED, "for=1.2.3.4; proto=https; by=myproxy; host=mydomain.com:8080".parse().unwrap());
+    let socket_ip_addr = core::net::IpAddr::from([127, 0, 0, 1]);
 
-    // 192.168.0.1 is the client ip address, which should be extracted from the connection.
-    // It is trusted by default as it is a private ip address.
-    let trusted = Trusted::extract("192.168.0.1".parse().unwrap(), &request, &config);
-    
-    assert_eq!(trusted.ip(), "1.1.1.1".parse().unwrap());
-    assert_eq!(trusted.host(), "example.com");
-    assert_eq!(trusted.port(), 8080);
-    assert_eq!(trusted.scheme(), "http");
+    let trusted = Trusted::from(socket_ip_addr, &request, &config);
+
+    assert_eq!(trusted.scheme(), Some("https"));
+    assert_eq!(trusted.host(), Some("mydomain.com"));
+    assert_eq!(trusted.port(), Some(8080));
+    assert_eq!(trusted.ip(), core::net::IpAddr::from([1, 2, 3, 4]));
 }
 ```
 
