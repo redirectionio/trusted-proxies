@@ -1,4 +1,4 @@
-use std::net::IpAddr;
+use core::net::IpAddr;
 
 use ipnet::{AddrParseError, IpNet};
 

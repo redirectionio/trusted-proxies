@@ -1,6 +1,6 @@
 use crate::extract::RequestInformation;
 use crate::Config;
-use std::net::IpAddr;
+use core::net::IpAddr;
 
 pub struct Trusted<'a> {
     pub host: Option<&'a str>,
