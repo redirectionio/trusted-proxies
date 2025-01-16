@@ -24,11 +24,25 @@ use core::net::IpAddr;
 /// assert_eq!(trusted.ip(), core::net::IpAddr::from([1, 2, 3, 4]));
 /// ```
 #[derive(Debug, Clone)]
-pub struct Trusted<'a> {
-    pub host: Option<&'a str>,
-    pub scheme: Option<&'a str>,
-    pub by: Option<&'a str>,
-    pub ip: IpAddr,
+pub enum Trusted<'a> {
+    Borrowed(TrustedBorrowed<'a>),
+    Owned(TrustedOwned),
+}
+
+#[derive(Debug, Clone)]
+pub struct TrustedBorrowed<'a> {
+    host: Option<&'a str>,
+    scheme: Option<&'a str>,
+    by: Option<&'a str>,
+    ip: IpAddr,
+}
+
+#[derive(Debug, Clone)]
+pub struct TrustedOwned {
+    host: Option<String>,
+    scheme: Option<String>,
+    by: Option<String>,
+    ip: IpAddr,
 }
 
 /// Trim whitespace then any quote marks.
@@ -50,25 +64,46 @@ fn bare_address(val: &str) -> &str {
     }
 }
 
+impl Trusted<'_> {
+    pub fn into_owned(self) -> Trusted<'static> {
+        match self {
+            Self::Borrowed(trusted) => Trusted::Owned(TrustedOwned {
+                host: trusted.host.map(|s| s.to_string()),
+                scheme: trusted.scheme.map(|s| s.to_string()),
+                by: trusted.by.map(|s| s.to_string()),
+                ip: trusted.ip,
+            }),
+            Self::Owned(trusted) => Trusted::Owned(trusted),
+        }
+    }
+}
+
 impl<'a> Trusted<'a> {
     /// Get the scheme of the request
     pub fn scheme(&self) -> Option<&str> {
-        self.scheme
+        match self {
+            Self::Borrowed(trusted) => trusted.scheme,
+            Self::Owned(trusted) => trusted.scheme.as_deref(),
+        }
     }
 
     /// Get the host and potential port of the request
     pub fn host_with_port(&self) -> Option<&str> {
-        self.host
+        match self {
+            Self::Borrowed(trusted) => trusted.host,
+            Self::Owned(trusted) => trusted.host.as_deref(),
+        }
     }
 
     /// Get the host of the request (without port)
     pub fn host(&self) -> Option<&str> {
-        self.host.and_then(|host| host.split(':').next())
+        self.host_with_port()
+            .and_then(|host| host.split(':').next())
     }
 
     /// Get the port of the request
     pub fn port(&self) -> Option<u16> {
-        self.host.and_then(|host| {
+        self.host_with_port().and_then(|host| {
             host.split(':')
                 .nth(1)
                 .and_then(|port| port.parse::<u16>().ok())
@@ -77,12 +112,18 @@ impl<'a> Trusted<'a> {
 
     /// Get the proxy that forwarded the request
     pub fn by(&self) -> Option<&str> {
-        self.by
+        match self {
+            Self::Borrowed(trusted) => trusted.by,
+            Self::Owned(trusted) => trusted.by.as_deref(),
+        }
     }
 
     /// Get first untrusted IP address from the request, which should be in most cases the real client IP address
     pub fn ip(&self) -> IpAddr {
-        self.ip
+        match self {
+            Self::Borrowed(trusted) => trusted.ip,
+            Self::Owned(trusted) => trusted.ip,
+        }
     }
 
     /// Create a new `Trusted` struct from a peer address, a request and a configuration
@@ -212,12 +253,12 @@ impl<'a> Trusted<'a> {
                 )
             };
 
-        Self {
+        Self::Borrowed(TrustedBorrowed {
             host: trusted_host,
             scheme: trusted_scheme,
             by: trusted_by,
             ip: trusted_ip,
-        }
+        })
     }
 }
 
